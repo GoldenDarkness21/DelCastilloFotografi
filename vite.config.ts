@@ -2,8 +2,33 @@ import { defineConfig, type HtmlTagDescriptor, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'node:path'
+import { readFileSync } from 'node:fs'
 
-import siteConfiguration from './.figma/make/site.json'
+const fallbackSiteConfiguration: FigmaSiteConfiguration = {
+  title: 'DelCastillo fotografía + video',
+  description: 'Portafolio profesional de fotografía y video de Edinson Castillo en Cali, Colombia.',
+  language: 'es',
+  robots: { index: true },
+}
+
+const siteConfiguration: FigmaSiteConfiguration = (() => {
+  try {
+    const configurationUrl = new URL('./.figma/make/site.json', import.meta.url)
+    const localConfiguration = JSON.parse(
+      readFileSync(configurationUrl, 'utf8'),
+    ) as FigmaSiteConfiguration
+
+    return {
+      ...fallbackSiteConfiguration,
+      ...localConfiguration,
+      // Vercel is the public production site and must remain indexable.
+      robots: process.env.VERCEL ? { index: true } : localConfiguration.robots,
+    }
+  } catch {
+    // The Make-managed file is not guaranteed to exist in external deploys.
+    return fallbackSiteConfiguration
+  }
+})()
 
 
 // Vite config — https://vitejs.dev/config/
